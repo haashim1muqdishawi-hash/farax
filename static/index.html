@@ -1,0 +1,2350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Farax – Ephemeral Social Space</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ===== CSS RESET & VARIABLES ===== */
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --bg-color: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-tertiary: #f3f4f6;
+            --text-color: #111827;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --header-height: 60px;
+            --footer-height: 50px;
+            --border-radius: 12px;
+            --transition: all 0.2s ease;
+            --fs-base: clamp(0.9rem, 2vw, 1rem);
+            --fs-small: clamp(0.75rem, 1.5vw, 0.85rem);
+            --fs-large: clamp(1.2rem, 4vw, 1.5rem);
+            --fs-xl: clamp(1.5rem, 6vw, 2rem);
+        }
+        .dark-mode {
+            --primary-color: #818cf8;
+            --primary-dark: #6366f1;
+            --secondary-color: #34d399;
+            --danger-color: #f87171;
+            --warning-color: #fbbf24;
+            --bg-color: #111827;
+            --bg-secondary: #1f2937;
+            --bg-tertiary: #374151;
+            --text-color: #f9fafb;
+            --text-secondary: #d1d5db;
+            --border-color: #4b5563;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: var(--transition);
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-size: var(--fs-base);
+            line-height: 1.5;
+        }
+        .offline-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+        }
+        body.offline .offline-overlay { display: flex; }
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        header {
+            height: var(--header-height);
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            gap: 0.5rem;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+            white-space: nowrap;
+        }
+        .logo i { color: var(--primary-color); }
+        .search-bar {
+            flex: 1 1 auto;
+            max-width: 400px;
+            margin: 0 0.5rem;
+            position: relative;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 0.5rem 1rem 0.5rem 2.5rem;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-color);
+        }
+        .search-bar i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+        .nav-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: nowrap;
+        }
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+        .icon-btn:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-color);
+        }
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+        }
+        .notification-bell .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .notification-dropdown {
+            position: absolute;
+            top: 40px;
+            right: 0;
+            width: min(300px, 90vw);
+            max-height: 400px;
+            overflow-y: auto;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            z-index: 200;
+            display: none;
+        }
+        .notification-dropdown.show { display: block; }
+        .notification-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            font-size: var(--fs-small);
+        }
+        .notification-item:hover { background: var(--bg-tertiary); }
+        .notification-item.unread { background: rgba(99,102,241,0.1); }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+        }
+        main {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 250px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            padding: 1rem 0;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            transition: left 0.3s ease;
+            flex-shrink: 0;
+        }
+        .content-area {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            width: 100%;
+        }
+        footer {
+            height: var(--footer-height);
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 0 1rem;
+        }
+        .btn {
+            padding: 0.6rem 1rem;
+            border-radius: var(--border-radius);
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: var(--fs-small);
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-color);
+        }
+        .btn-secondary:hover { background: var(--border-color); }
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+        .btn-small { padding: 0.4rem 0.8rem; }
+        .full-width { width: 100%; }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.25rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .nav-item:hover, .nav-item.active {
+            background: var(--bg-tertiary);
+            color: var(--text-color);
+        }
+        .nav-item i { width: 20px; text-align: center; }
+        .nav-divider {
+            height: 1px;
+            background: var(--border-color);
+            margin: 1rem 1.25rem;
+        }
+        .nav-section-title {
+            padding: 0.5rem 1.25rem;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+        .group-list { padding: 0 1.25rem; }
+        .group-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: var(--fs-small);
+        }
+        .group-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--warning-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+        .feed-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            gap: 0.5rem;
+        }
+        .feed-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+        }
+        .feed-tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+            transition: var(--transition);
+            font-size: var(--fs-small);
+        }
+        .feed-tab.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+        }
+        .post {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+        }
+        .post-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            gap: 0.5rem;
+        }
+        .post-author {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+        .post-author-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--secondary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            background-size: cover;
+            background-position: center;
+        }
+        .post-author-info h4 { font-size: 1rem; margin-bottom: 0.25rem; }
+        .post-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            flex-wrap: wrap;
+        }
+        .post-timer {
+            background: var(--bg-tertiary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .post-content {
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .post-media {
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .post-media img, .post-media video {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+        .post-reactions {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .reaction-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .reaction-btn {
+            background: var(--bg-tertiary);
+            border: none;
+            padding: 0.3rem 0.6rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 1rem;
+        }
+        .reaction-btn:hover {
+            background: var(--border-color);
+            transform: translateY(-2px);
+        }
+        .reaction-btn.selected {
+            background: rgba(99,102,241,0.2);
+            border: 1px solid var(--primary-color);
+        }
+        .reaction-counts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        .comments-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .comment-input-area {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .comment-input-area input {
+            flex: 1 1 200px;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-color);
+        }
+        .comment {
+            margin-bottom: 1rem;
+        }
+        .comment-main {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+        }
+        .comment-content {
+            flex: 1;
+            background: var(--bg-tertiary);
+            padding: 0.5rem 0.75rem;
+            border-radius: 20px;
+            word-break: break-word;
+        }
+        .comment-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+            font-size: 0.8rem;
+        }
+        .comment-author { font-weight: 600; cursor: pointer; }
+        .comment-time { color: var(--text-secondary); }
+        .comment-text .mention { color: var(--primary-color); font-weight: 600; cursor: pointer; }
+        .comment-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.25rem;
+            font-size: 0.75rem;
+        }
+        .comment-action { color: var(--text-secondary); cursor: pointer; }
+        .replies {
+            margin-left: 2.5rem;
+            margin-top: 0.5rem;
+        }
+        .reply-input-area {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            margin-left: 2.5rem;
+            flex-wrap: wrap;
+        }
+        .reply-input-area input {
+            flex: 1 1 150px;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-color);
+        }
+        .group-detail-view { display: none; }
+        .group-detail-view.active { display: block; }
+        .group-header {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        .group-avatar-large {
+            width: clamp(60px, 15vw, 80px);
+            height: clamp(60px, 15vw, 80px);
+            border-radius: 50%;
+            background: var(--warning-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            border: 4px solid var(--bg-color);
+        }
+        .group-info h1 { font-size: var(--fs-xl); margin-bottom: 0.25rem; }
+        .member-list {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+        .profile-header {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        .profile-avatar-large {
+            width: clamp(80px, 20vw, 100px);
+            height: clamp(80px, 20vw, 100px);
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            font-weight: bold;
+            background-size: cover;
+            background-position: center;
+        }
+        .profile-info h1 { font-size: var(--fs-xl); margin-bottom: 0.25rem; }
+        .profile-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 0.5rem 0;
+        }
+        .stat-item {
+            text-align: center;
+            min-width: 60px;
+        }
+        .stat-value { font-size: 1.25rem; font-weight: bold; color: var(--primary-color); }
+        .settings-container { max-width: 800px; margin: 0 auto; width: 100%; }
+        .settings-section {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+        }
+        .setting-item {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+            gap: 0.5rem;
+        }
+        .setting-item:last-child { border-bottom: none; }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--border-color);
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background: var(--primary-color);
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: var(--bg-color);
+            border-radius: var(--border-radius);
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .modal-body { padding: 1rem; }
+        .modal-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .form-group { margin-bottom: 1rem; }
+        .form-label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+            font-size: var(--fs-small);
+        }
+        .form-control {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            background: var(--bg-color);
+            color: var(--text-color);
+            font-size: 0.95rem;
+        }
+        textarea.form-control { min-height: 100px; resize: vertical; }
+        .radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .radio-option { flex: 1 1 100px; min-width: 80px; }
+        .radio-label {
+            display: block;
+            padding: 0.6rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            text-align: center;
+            cursor: pointer;
+            font-size: var(--fs-small);
+        }
+        .radio-input:checked + .radio-label {
+            border-color: var(--primary-color);
+            background: rgba(99,102,241,0.1);
+            color: var(--primary-color);
+        }
+        .duration-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .duration-option {
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            text-align: center;
+            cursor: pointer;
+            font-size: var(--fs-small);
+        }
+        .duration-option.active {
+            border-color: var(--primary-color);
+            background: rgba(99,102,241,0.1);
+            color: var(--primary-color);
+        }
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .mt-20 { margin-top: 1.25rem; }
+        .mb-20 { margin-bottom: 1.25rem; }
+        .mt-10 { margin-top: 0.5rem; }
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -250px;
+                top: var(--header-height);
+                height: calc(100vh - var(--header-height));
+                z-index: 90;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            }
+            .sidebar.active { left: 0; }
+            .mobile-menu-btn { display: flex !important; }
+            .search-bar { max-width: none; margin: 0 0.25rem; }
+            .logo span { display: none; }
+            .profile-header, .group-header { flex-direction: column; text-align: center; align-items: center; }
+        }
+        @media (min-width: 769px) { .mobile-menu-btn { display: none !important; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .fade-in { animation: fadeIn 0.3s ease; }
+        .slide-up { animation: slideUp 0.3s ease; }
+        .media-preview { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+        .media-preview-item { position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; }
+        .media-preview-item img, .media-preview-item video { width: 100%; height: 100%; object-fit: cover; }
+        .remove-media { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.5); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="offline-overlay">
+        <i class="fas fa-wifi-slash"></i>
+        <h2>No Internet Connection</h2>
+        <p>Farax requires an active internet connection.</p>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-card slide-up" style="max-width: 400px; margin: 20vh auto; background: var(--bg-color); border-radius: var(--border-radius); padding: 2rem; box-shadow: var(--shadow);">
+            <div class="login-header text-center">
+                <h1><i class="fas fa-fire"></i> Farax</h1>
+                <p>Where moments live, then let go</p>
+            </div>
+            <div class="form-group">
+                <input type="text" id="loginUsername" class="form-control" placeholder="Username">
+            </div>
+            <div class="form-group">
+                <input type="password" id="loginPassword" class="form-control" placeholder="Password">
+            </div>
+            <button id="loginBtn" class="btn btn-primary full-width">Sign In</button>
+            <div class="text-center mt-20">
+                <button id="showRegisterBtn" class="btn btn-secondary">Create Account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Farax Account</h2>
+                <button class="icon-btn close-register-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="registerUsername" class="form-control" placeholder="Unique username">
+                    <small class="text-secondary">⚠️ Cannot be changed later</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Display Name</label>
+                    <input type="text" id="registerDisplayName" class="form-control" placeholder="How others see you">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="registerPassword" class="form-control" placeholder="Create a password">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Recovery Secrets (3 phrases)</label>
+                    <p class="text-secondary" style="font-size:0.9rem;">⚠️ These are your only way to recover your account if you forget your password. Store them safely.</p>
+                    <input type="text" id="recoverySecret1" class="form-control mb-20" placeholder="First secret phrase">
+                    <input type="text" id="recoverySecret2" class="form-control mb-20" placeholder="Second secret phrase">
+                    <input type="text" id="recoverySecret3" class="form-control" placeholder="Third secret phrase">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Recovery Email (optional)</label>
+                    <input type="email" id="recoveryEmail" class="form-control" placeholder="Optional - for extra security">
+                    <small class="text-secondary">Helps if you forget your secrets</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary close-register-modal">Cancel</button>
+                <button id="registerBtn" class="btn btn-primary">Create Account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="appContainer" class="app-container hidden">
+        <header>
+            <div class="logo"><i class="fas fa-fire"></i><span>Farax</span></div>
+            <div class="search-bar"><i class="fas fa-search"></i><input type="text" id="globalSearch" placeholder="Search users, posts, groups..."></div>
+            <div class="nav-controls">
+                <button class="icon-btn" id="themeToggle"><i class="fas fa-moon"></i></button>
+                <div class="notification-bell" id="notificationBell">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge" id="notificationBadge">0</span>
+                    <div class="notification-dropdown" id="notificationDropdown"></div>
+                </div>
+                <button class="icon-btn mobile-menu-btn" id="mobileMenuToggle"><i class="fas fa-bars"></i></button>
+                <button class="btn btn-primary btn-small" id="newPostBtn"><i class="fas fa-plus"></i> New Post</button>
+                <div class="user-avatar" id="userAvatar"></div>
+            </div>
+        </header>
+        <main>
+            <aside class="sidebar" id="sidebar">
+                <div class="nav-item active" data-page="home"><i class="fas fa-home"></i><span>Home Feed</span></div>
+                <div class="nav-item" data-page="discover"><i class="fas fa-compass"></i><span>Discover</span></div>
+                <div class="nav-item" data-page="friends"><i class="fas fa-user-friends"></i><span>Friends</span><span id="friendRequestBadge" class="badge" style="background:var(--danger-color); margin-left:auto; display:none;">0</span></div>
+                <div class="nav-item" data-page="groups"><i class="fas fa-users"></i><span>Groups</span></div>
+                <div class="nav-item" data-page="search"><i class="fas fa-search"></i><span>Search Results</span></div>
+                <div class="nav-divider"></div>
+                <div class="nav-section-title">Your Groups</div>
+                <div class="group-list" id="sidebarGroups"></div>
+                <div class="nav-divider"></div>
+                <div class="nav-item" data-page="profile"><i class="fas fa-user"></i><span>Profile</span></div>
+                <div class="nav-item" data-page="settings"><i class="fas fa-cog"></i><span>Settings</span></div>
+                <div class="nav-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Log Out</span></div>
+            </aside>
+            <section class="content-area" id="contentArea">
+                <!-- Home Page -->
+                <div id="homePage" class="page active">
+                    <div class="feed-header">
+                        <h2>Home Feed</h2>
+                        <div class="post-timer" id="globalTimer"><i class="fas fa-clock"></i> <span>Platform reset in 20 days</span></div>
+                    </div>
+                    <div class="feed-tabs">
+                        <div class="feed-tab active" data-feed="all">All</div>
+                        <div class="feed-tab" data-feed="text">Text</div>
+                        <div class="feed-tab" data-feed="images">Images</div>
+                        <div class="feed-tab" data-feed="videos">Videos</div>
+                        <div class="feed-tab" data-feed="friends">Friends</div>
+                    </div>
+                    <div id="feedContainer"></div>
+                </div>
+                <!-- Discover Page -->
+                <div id="discoverPage" class="page hidden">
+                    <h2>Discover</h2>
+                    <p class="text-secondary">Explore random content from across Farax. Everything here is ephemeral.</p>
+                    <div class="feed-tabs mt-20">
+                        <div class="feed-tab active" data-discover="random">Random</div>
+                        <div class="feed-tab" data-discover="popular">Popular Now</div>
+                        <div class="feed-tab" data-discover="new">Just Posted</div>
+                    </div>
+                    <div id="discoverContainer" class="mt-20"></div>
+                </div>
+                <!-- Friends Page -->
+                <div id="friendsPage" class="page hidden">
+                    <h2>Friends</h2>
+                    <div class="settings-section mt-20">
+                        <h3>Friend Requests</h3>
+                        <div id="friendRequestsContainer"></div>
+                    </div>
+                    <div class="settings-section mt-20">
+                        <h3>Your Friends</h3>
+                        <div id="friendsListContainer"></div>
+                    </div>
+                </div>
+                <!-- Groups Page -->
+                <div id="groupsPage" class="page hidden">
+                    <div id="groupsListView">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                            <h2>Groups</h2>
+                            <button class="btn btn-primary" id="createGroupBtn"><i class="fas fa-plus"></i> Create Group</button>
+                        </div>
+                        <p class="text-secondary mt-10">Join groups to connect with people who share your interests.</p>
+                        <div class="settings-section mt-20">
+                            <h3>Your Groups</h3>
+                            <div id="userGroupsContainer"></div>
+                        </div>
+                        <div class="settings-section mt-20">
+                            <h3>Discover Groups</h3>
+                            <div id="discoverGroupsContainer"></div>
+                        </div>
+                    </div>
+                    <div id="groupDetailView" class="group-detail-view">
+                        <div class="back-to-groups" id="backToGroupsBtn" style="cursor:pointer; margin-bottom:1rem;"><i class="fas fa-arrow-left"></i> Back to Groups</div>
+                        <div class="group-header">
+                            <div class="group-avatar-large" id="groupDetailAvatar"></div>
+                            <div class="group-info">
+                                <h1 id="groupDetailName"></h1>
+                                <div id="groupDetailMeta"></div>
+                                <div id="groupActionButtons"></div>
+                            </div>
+                        </div>
+                        <div class="feed-tabs">
+                            <div class="feed-tab active" data-group-tab="posts">Posts</div>
+                            <div class="feed-tab" data-group-tab="members">Members</div>
+                        </div>
+                        <div id="groupPostsContainer" class="mt-20"></div>
+                        <div id="groupMembersContainer" class="mt-20" style="display:none;"></div>
+                        <button class="btn btn-primary mt-20" id="createGroupPostBtn"><i class="fas fa-plus"></i> Create Group Post</button>
+                    </div>
+                </div>
+                <!-- Search Page -->
+                <div id="searchPage" class="page hidden">
+                    <h2>Search Results</h2>
+                    <div class="feed-tabs mt-20">
+                        <div class="feed-tab active" data-search="all">All</div>
+                        <div class="feed-tab" data-search="users">Users</div>
+                        <div class="feed-tab" data-search="posts">Posts</div>
+                        <div class="feed-tab" data-search="groups">Groups</div>
+                    </div>
+                    <div id="searchResultsContainer" class="mt-20"></div>
+                </div>
+                <!-- Profile Page -->
+                <div id="profilePage" class="page hidden">
+                    <div class="profile-header">
+                        <div class="profile-avatar-large" id="profileAvatarLarge"></div>
+                        <div class="profile-info">
+                            <h1 id="profileDisplayName"></h1>
+                            <div class="profile-username" id="profileUsername"></div>
+                            <div class="profile-stats">
+                                <div class="stat-item"><div class="stat-value" id="profilePostCount">0</div><div class="stat-label">Active Posts</div></div>
+                                <div class="stat-item"><div class="stat-value" id="profileFriendCount">0</div><div class="stat-label">Friends</div></div>
+                                <div class="stat-item"><div class="stat-value" id="profileDaysLeft">20</div><div class="stat-label">Days to Reset</div></div>
+                            </div>
+                            <div id="profileActionButton"></div>
+                        </div>
+                    </div>
+                    <div class="feed-tabs">
+                        <div class="feed-tab active" data-profile="posts">Posts</div>
+                        <div class="feed-tab" data-profile="liked">Liked</div>
+                    </div>
+                    <div id="profilePostsContainer" class="mt-20"></div>
+                </div>
+                <!-- Settings Page -->
+                <div id="settingsPage" class="page hidden">
+                    <div class="settings-container">
+                        <h2>Settings</h2>
+                        <div class="settings-section mt-20">
+                            <h3>Appearance</h3>
+                            <div class="setting-item">
+                                <div class="setting-info"><h4>Dark Mode</h4><p class="setting-description">Switch between light and dark themes</p></div>
+                                <label class="toggle-switch"><input type="checkbox" id="darkModeToggle"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info"><h4>Profile Picture</h4><p class="setting-description">Upload an image for your avatar</p></div>
+                                <div class="avatar-upload">
+                                    <div id="avatarPreview" class="avatar-preview" style="width:60px;height:60px;border-radius:50%;background-size:cover;"></div>
+                                    <button class="btn btn-secondary btn-small" id="uploadAvatarBtn"><i class="fas fa-upload"></i> Upload</button>
+                                    <input type="file" id="avatarUpload" accept="image/*" hidden>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info"><h4>Default Content Duration</h4><p class="setting-description">How long your posts last by default</p></div>
+                                <select id="defaultDuration" class="form-control" style="width:auto; min-width:120px;">
+                                    <option value="30">30 minutes</option>
+                                    <option value="60">1 hour</option>
+                                    <option value="360">6 hours</option>
+                                    <option value="1440" selected>1 day</option>
+                                    <option value="4320">3 days</option>
+                                    <option value="10080">7 days</option>
+                                    <option value="43200">30 days</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info"><h4>Default Visibility</h4><p class="setting-description">Who can see your posts by default</p></div>
+                                <select id="defaultVisibility" class="form-control" style="width:auto; min-width:120px;">
+                                    <option value="public">Public</option>
+                                    <option value="friends" selected>Friends Only</option>
+                                    <option value="private">Only Me</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="settings-section mt-20">
+                            <h3><i class="fas fa-exclamation-triangle"></i> Account Management</h3>
+                            <div class="setting-item">
+                                <div class="setting-info"><h4>Delete All My Content</h4><p class="setting-description">Immediately delete all your posts, comments, and reactions</p></div>
+                                <button class="btn btn-danger btn-small" id="deleteContentBtn">Delete All</button>
+                            </div>
+                            <div class="setting-item">
+                                <div class="setting-info"><h4>Delete Account</h4><p class="setting-description">Permanently delete your Farax account</p></div>
+                                <button class="btn btn-danger btn-small" id="deleteAccountBtn">Delete Account</button>
+                            </div>
+                        </div>
+                        <div class="mt-20 text-center text-secondary">
+                            <p>Farax v3.0 • Next platform reset: <span id="resetDateDisplay"></span></p>
+                            <p class="mt-20">Remember: Everything on Farax is ephemeral. Enjoy the moment.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        <footer><div>Farax • Live in the moment, let go when it's time</div></footer>
+    </div>
+
+    <!-- Create Post Modal -->
+    <div id="createPostModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create a New Post</h2>
+                <button class="icon-btn close-post-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <textarea id="postContent" class="form-control" placeholder="What's happening?"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Add Media (Optional)</label>
+                    <div class="media-preview" id="mediaPreview"></div>
+                    <button class="btn btn-secondary btn-small mt-10" id="addMediaBtn"><i class="fas fa-image"></i> Add Image/Video</button>
+                    <input type="file" id="mediaUpload" accept="image/*,video/*" hidden>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Who can see this?</label>
+                    <div class="radio-group">
+                        <div class="radio-option"><input type="radio" id="visibilityPublic" name="visibility" value="public" class="radio-input" checked><label for="visibilityPublic" class="radio-label"><i class="fas fa-globe"></i><br>Public</label></div>
+                        <div class="radio-option"><input type="radio" id="visibilityFriends" name="visibility" value="friends" class="radio-input"><label for="visibilityFriends" class="radio-label"><i class="fas fa-user-friends"></i><br>Friends</label></div>
+                        <div class="radio-option"><input type="radio" id="visibilityPrivate" name="visibility" value="private" class="radio-input"><label for="visibilityPrivate" class="radio-label"><i class="fas fa-lock"></i><br>Only Me</label></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">How long should this last?</label>
+                    <div class="duration-options">
+                        <div class="duration-option" data-minutes="30">30 min</div>
+                        <div class="duration-option" data-minutes="60">1 hour</div>
+                        <div class="duration-option" data-minutes="360">6 hours</div>
+                        <div class="duration-option active" data-minutes="1440">1 day</div>
+                        <div class="duration-option" data-minutes="4320">3 days</div>
+                        <div class="duration-option" data-minutes="10080">7 days</div>
+                        <div class="duration-option" data-minutes="43200">30 days</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary close-post-modal">Cancel</button>
+                <button id="publishPostBtn" class="btn btn-primary">Publish Post</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Group Modal -->
+    <div id="createGroupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create a New Group</h2>
+                <button class="icon-btn close-group-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <input type="text" id="groupName" class="form-control" placeholder="Group Name">
+                </div>
+                <div class="form-group">
+                    <textarea id="groupDescription" class="form-control" placeholder="What's this group about?"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Group Avatar (Emoji)</label>
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                        <div class="duration-option emoji-option" data-emoji="🌿">🌿</div>
+                        <div class="duration-option emoji-option" data-emoji="🎨">🎨</div>
+                        <div class="duration-option emoji-option" data-emoji="📚">📚</div>
+                        <div class="duration-option emoji-option" data-emoji="💻">💻</div>
+                        <div class="duration-option emoji-option" data-emoji="🎮">🎮</div>
+                        <div class="duration-option emoji-option" data-emoji="🎵">🎵</div>
+                        <div class="duration-option emoji-option" data-emoji="⚽">⚽</div>
+                        <div class="duration-option emoji-option" data-emoji="✈️">✈️</div>
+                        <div class="duration-option emoji-option" data-emoji="🍕">🍕</div>
+                    </div>
+                    <input type="hidden" id="selectedGroupEmoji" value="🌿">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary close-group-modal">Cancel</button>
+                <button id="createGroupConfirmBtn" class="btn btn-primary">Create Group</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirm Deletion</h2>
+                <button class="icon-btn close-delete-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="deleteMessage">Are you sure you want to delete this?</p>
+                <p class="text-danger" style="margin-top:10px;"><i class="fas fa-exclamation-triangle"></i> Warning: This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary close-delete-modal">Cancel</button>
+                <button id="confirmDeleteBtn" class="btn btn-danger">Delete Permanently</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== CONSTANTS ==========
+        // ⚠️ CHANGE: Replace with your actual Render backend URL (no trailing slash)
+        const API_BASE = 'https://farax.onrender.com';   // 👈 YOUR RENDER URL
+
+        const REACTIONS = ['👍', '❤️', '😂', '😮', '😢'];
+
+        // ========== API CLIENT ==========
+        async function apiCall(endpoint, options = {}) {
+            // Always include credentials for session cookie
+            const opts = {
+                ...options,
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json', ...options.headers }
+            };
+            const response = await fetch(`${API_BASE}${endpoint}`, opts);
+            if (!response.ok) {
+                let errorMsg;
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.error || 'API call failed';
+                } catch (e) {
+                    errorMsg = `Server error: ${response.status}`;
+                }
+                throw new Error(errorMsg);
+            }
+            return response.json();
+        }
+
+        // ========== GLOBAL STATE ==========
+        let currentUser = null;
+        let allUsers = [];
+        let posts = [];
+        let groups = [];
+        let friendRequests = [];
+        let notifications = [];
+        let darkMode = localStorage.getItem('darkMode') === 'true';
+        let selectedDuration = 1440;
+        let selectedVisibility = 'public';
+        let postMediaFiles = [];
+        let currentProfileUserId = null;
+        let currentGroupId = null;
+        let currentFeedFilter = 'all';
+        let currentDiscoverType = 'random';
+        let currentSearchType = 'all';
+        let currentProfileTab = 'posts';
+        let timerIntervals = [];
+
+        // Helper: escape HTML
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+                return c;
+            });
+        }
+
+        // Format time left
+        function formatTimeLeft(expiresAt) {
+            const diff = new Date(expiresAt) - new Date();
+            if (diff <= 0) return 'Expired';
+            const hours = Math.floor(diff / 3600000);
+            const minutes = Math.floor((diff % 3600000) / 60000);
+            if (hours > 24) return `${Math.floor(hours/24)}d`;
+            if (hours > 0) return `${hours}h ${minutes}m`;
+            return `${minutes}m`;
+        }
+
+        // ========== AUTH ==========
+        async function login(username, password) {
+            try {
+                const data = await apiCall('/api/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password })
+                });
+                currentUser = data.user;
+                await loadAllData();
+                renderApp();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function register(username, displayName, password, recoverySecrets, recoveryEmail) {
+            try {
+                const data = await apiCall('/api/register', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        username, displayName, password,
+                        recovery: recoverySecrets,
+                        recoveryEmail: recoveryEmail || ''
+                    })
+                });
+                currentUser = data.user;
+                await loadAllData();
+                renderApp();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function logout() {
+            try {
+                await apiCall('/api/logout', { method: 'POST' });
+            } catch (e) {}
+            currentUser = null;
+            renderLogin();
+        }
+
+        // ========== DATA LOADING ==========
+        async function loadAllData() {
+            try {
+                const [postsData, groupsData, usersData, friendReqsData, notificationsData] = await Promise.all([
+                    apiCall('/api/posts'),
+                    apiCall('/api/groups'),
+                    apiCall('/api/users'),
+                    apiCall('/api/friend-requests'),
+                    apiCall('/api/notifications')
+                ]);
+                posts = postsData.posts;
+                groups = groupsData.groups;
+                allUsers = usersData.users;
+                friendRequests = friendReqsData.requests;
+                notifications = notificationsData.notifications;
+            } catch (err) {
+                console.error('Error loading data:', err);
+            }
+        }
+
+        // ========== RENDER LOGIN ==========
+        function renderLogin() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('appContainer').classList.add('hidden');
+        }
+
+        // ========== RENDER APP ==========
+        function renderApp() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+            // Update user avatar
+            const avatarDiv = document.getElementById('userAvatar');
+            if (currentUser.profilePicture) {
+                avatarDiv.style.backgroundImage = `url(${API_BASE}${currentUser.profilePicture})`;
+                avatarDiv.style.backgroundSize = 'cover';
+                avatarDiv.textContent = '';
+            } else {
+                avatarDiv.style.backgroundImage = '';
+                avatarDiv.textContent = currentUser.displayName.substring(0,2).toUpperCase();
+            }
+            // Update profile preview in settings
+            if (document.getElementById('avatarPreview')) {
+                if (currentUser.profilePicture) {
+                    document.getElementById('avatarPreview').style.backgroundImage = `url(${API_BASE}${currentUser.profilePicture})`;
+                } else {
+                    document.getElementById('avatarPreview').style.backgroundImage = '';
+                }
+            }
+            // Load content
+            renderFeed();
+            renderGroupsList();
+            renderSidebarGroups();
+            renderFriendRequests();
+            renderFriendsList();
+            renderNotifications();
+            updateBadges();
+            // Start timers
+            startTimers();
+        }
+
+        // ========== FEED ==========
+        function renderFeed() {
+            const container = document.getElementById('feedContainer');
+            if (!container) return;
+            let filtered = [...posts];
+            // Filter by feed type
+            if (currentFeedFilter === 'text') filtered = filtered.filter(p => p.contentType === 'text');
+            else if (currentFeedFilter === 'images') filtered = filtered.filter(p => p.contentType === 'image');
+            else if (currentFeedFilter === 'videos') filtered = filtered.filter(p => p.contentType === 'video');
+            else if (currentFeedFilter === 'friends') filtered = filtered.filter(p => p.visibility === 'friends' && (p.authorId === currentUser.id || currentUser.friends.includes(p.authorId)));
+            // Sort by date
+            filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="text-center" style="padding:2rem;">No posts to show. Be the first to share a moment!</div>';
+                return;
+            }
+            container.innerHTML = filtered.map(post => renderPost(post)).join('');
+            // Attach reaction handlers after render
+            document.querySelectorAll('.reaction-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const postId = btn.dataset.postId;
+                    const emoji = btn.dataset.emoji;
+                    reactToPost(postId, emoji);
+                });
+            });
+            // Comment toggle
+            document.querySelectorAll('.toggle-comments').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const postId = btn.dataset.postId;
+                    const section = document.getElementById(`comments-${postId}`);
+                    if (section) {
+                        if (section.classList.contains('hidden')) {
+                            section.classList.remove('hidden');
+                            // Load comments for this post
+                            await loadComments(postId);
+                        } else {
+                            section.classList.add('hidden');
+                        }
+                    }
+                });
+            });
+        }
+
+        function renderPost(post) {
+            const author = allUsers.find(u => u.id === post.authorId) || { displayName: 'Unknown', username: 'unknown', profilePicture: null };
+            const expiresAt = new Date(post.expiresAt);
+            const timeLeft = formatTimeLeft(expiresAt);
+            const reactionsHtml = REACTIONS.map(emoji => {
+                const count = post.reactions?.[emoji]?.length || 0;
+                const isSelected = post.reactions?.[emoji]?.includes(currentUser.id);
+                return `<button class="reaction-btn ${isSelected ? 'selected' : ''}" data-post-id="${post.id}" data-emoji="${emoji}">${emoji} ${count}</button>`;
+            }).join('');
+            // Media URL must be prefixed with API_BASE
+            const mediaHtml = post.mediaUrl ? `
+                <div class="post-media">
+                    ${post.contentType === 'video' 
+                        ? `<video controls src="${API_BASE}${post.mediaUrl}"></video>` 
+                        : `<img src="${API_BASE}${post.mediaUrl}" alt="Post media">`}
+                </div>
+            ` : '';
+            return `
+                <div class="post" data-post-id="${post.id}">
+                    <div class="post-header">
+                        <div class="post-author" data-user-id="${post.authorId}">
+                            <div class="post-author-avatar" style="background-image: url(${author.profilePicture ? API_BASE + author.profilePicture : ''}); background-size: cover;">${author.profilePicture ? '' : author.displayName.substring(0,2)}</div>
+                            <div class="post-author-info">
+                                <h4>${escapeHTML(author.displayName)}</h4>
+                                <div class="post-meta">
+                                    <span>@${escapeHTML(author.username)}</span>
+                                    <span>•</span>
+                                    <span>${new Date(post.createdAt).toLocaleString()}</span>
+                                    <span class="post-timer"><i class="fas fa-hourglass-half"></i> ${timeLeft}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="post-content">${escapeHTML(post.content)}</div>
+                    ${mediaHtml}
+                    <div class="post-reactions">
+                        <div class="reaction-bar">${reactionsHtml}</div>
+                        <button class="btn btn-secondary btn-small toggle-comments" data-post-id="${post.id}">💬 Comments</button>
+                    </div>
+                    <div id="comments-${post.id}" class="comments-section hidden"></div>
+                </div>
+            `;
+        }
+
+        async function loadComments(postId) {
+            const container = document.getElementById(`comments-${postId}`);
+            if (!container) return;
+            try {
+                const data = await apiCall(`/api/posts/${postId}/comments`);
+                const comments = data.comments;
+                container.innerHTML = comments.map(comment => renderComment(comment, postId)).join('');
+                // Attach reply handlers
+                document.querySelectorAll(`#comments-${postId} .reply-btn`).forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const parentId = btn.dataset.commentId;
+                        const replyInput = document.getElementById(`reply-input-${parentId}`);
+                        if (replyInput) replyInput.classList.toggle('hidden');
+                    });
+                });
+                document.querySelectorAll(`#comments-${postId} .submit-reply`).forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const parentId = btn.dataset.commentId;
+                        const input = document.getElementById(`reply-text-${parentId}`);
+                        const content = input.value.trim();
+                        if (!content) return;
+                        await createComment(postId, content, parentId);
+                        input.value = '';
+                        await loadComments(postId);
+                    });
+                });
+                // Add comment input
+                const commentInputHtml = `
+                    <div class="comment-input-area mt-10">
+                        <input type="text" id="new-comment-${postId}" placeholder="Add a comment...">
+                        <button class="btn btn-primary btn-small post-comment" data-post-id="${postId}">Post</button>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', commentInputHtml);
+                document.querySelector(`.post-comment[data-post-id="${postId}"]`).addEventListener('click', async () => {
+                    const content = document.getElementById(`new-comment-${postId}`).value.trim();
+                    if (!content) return;
+                    await createComment(postId, content);
+                    document.getElementById(`new-comment-${postId}`).value = '';
+                    await loadComments(postId);
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderComment(comment, postId) {
+            const author = allUsers.find(u => u.id === comment.authorId) || { displayName: 'Unknown', username: 'unknown' };
+            const repliesHtml = comment.replies ? comment.replies.map(reply => renderComment(reply, postId)).join('') : '';
+            return `
+                <div class="comment" data-comment-id="${comment.id}">
+                    <div class="comment-main">
+                        <div class="comment-avatar" style="background-image: url(${author.profilePicture ? API_BASE + author.profilePicture : ''}); background-size: cover;">${author.profilePicture ? '' : author.displayName.substring(0,2)}</div>
+                        <div class="comment-content">
+                            <div class="comment-header">
+                                <span class="comment-author" data-user-id="${comment.authorId}">${escapeHTML(author.displayName)}</span>
+                                <span class="comment-time">${new Date(comment.createdAt).toLocaleString()}</span>
+                            </div>
+                            <div class="comment-text">${escapeHTML(comment.content)}</div>
+                            <div class="comment-actions">
+                                <span class="comment-action reply-btn" data-comment-id="${comment.id}">Reply</span>
+                            </div>
+                            <div id="reply-input-${comment.id}" class="reply-input-area hidden">
+                                <input type="text" id="reply-text-${comment.id}" placeholder="Write a reply...">
+                                <button class="btn btn-primary btn-small submit-reply" data-comment-id="${comment.id}">Reply</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="replies">${repliesHtml}</div>
+                </div>
+            `;
+        }
+
+        async function createComment(postId, content, parentId = null) {
+            try {
+                await apiCall('/api/comments', {
+                    method: 'POST',
+                    body: JSON.stringify({ postId, content, parentId, mentions: [] })
+                });
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function reactToPost(postId, emoji) {
+            try {
+                await apiCall(`/api/posts/${postId}/react`, {
+                    method: 'POST',
+                    body: JSON.stringify({ emoji })
+                });
+                await loadAllData();
+                renderFeed();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        // ========== GROUPS ==========
+        function renderGroupsList() {
+            const userGroups = groups.filter(g => g.members.includes(currentUser.id));
+            const otherGroups = groups.filter(g => !g.members.includes(currentUser.id));
+            const userContainer = document.getElementById('userGroupsContainer');
+            const discoverContainer = document.getElementById('discoverGroupsContainer');
+            if (userContainer) {
+                userContainer.innerHTML = userGroups.map(g => `
+                    <div class="group-item" data-group-id="${g.id}">
+                        <div class="group-avatar">${g.avatar}</div>
+                        <span>${escapeHTML(g.name)}</span>
+                    </div>
+                `).join('');
+                document.querySelectorAll('#userGroupsContainer .group-item').forEach(el => {
+                    el.addEventListener('click', () => showGroupDetail(el.dataset.groupId));
+                });
+            }
+            if (discoverContainer) {
+                discoverContainer.innerHTML = otherGroups.map(g => `
+                    <div class="group-item" data-group-id="${g.id}">
+                        <div class="group-avatar">${g.avatar}</div>
+                        <span>${escapeHTML(g.name)}</span>
+                        <button class="btn btn-small btn-secondary join-group-btn" data-group-id="${g.id}" style="margin-left:auto;">Join</button>
+                    </div>
+                `).join('');
+                document.querySelectorAll('.join-group-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        joinGroup(btn.dataset.groupId);
+                    });
+                });
+                document.querySelectorAll('#discoverGroupsContainer .group-item').forEach(el => {
+                    el.addEventListener('click', () => showGroupDetail(el.dataset.groupId));
+                });
+            }
+        }
+
+        function renderSidebarGroups() {
+            const container = document.getElementById('sidebarGroups');
+            const userGroups = groups.filter(g => g.members.includes(currentUser.id));
+            container.innerHTML = userGroups.map(g => `
+                <div class="group-item" data-group-id="${g.id}">
+                    <div class="group-avatar">${g.avatar}</div>
+                    <span>${escapeHTML(g.name)}</span>
+                </div>
+            `).join('');
+            document.querySelectorAll('#sidebarGroups .group-item').forEach(el => {
+                el.addEventListener('click', () => showGroupDetail(el.dataset.groupId));
+            });
+        }
+
+        async function joinGroup(groupId) {
+            try {
+                await apiCall(`/api/groups/${groupId}/join`, { method: 'POST' });
+                await loadAllData();
+                renderGroupsList();
+                renderSidebarGroups();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function showGroupDetail(groupId) {
+            currentGroupId = groupId;
+            const group = groups.find(g => g.id === groupId);
+            if (!group) return;
+            document.getElementById('groupsListView').classList.add('hidden');
+            document.getElementById('groupDetailView').classList.add('active');
+            document.getElementById('groupDetailAvatar').textContent = group.avatar;
+            document.getElementById('groupDetailName').textContent = group.name;
+            document.getElementById('groupDetailMeta').innerHTML = `${group.members.length} members • ${group.description || ''}`;
+            const actionDiv = document.getElementById('groupActionButtons');
+            const isMember = group.members.includes(currentUser.id);
+            if (isMember) {
+                actionDiv.innerHTML = `<button class="btn btn-danger btn-small" id="leaveGroupBtn">Leave Group</button>`;
+                document.getElementById('leaveGroupBtn').addEventListener('click', async () => {
+                    try {
+                        await apiCall(`/api/groups/${groupId}/leave`, { method: 'POST' });
+                        await loadAllData();
+                        renderGroupsList();
+                        renderSidebarGroups();
+                        document.getElementById('groupsListView').classList.remove('hidden');
+                        document.getElementById('groupDetailView').classList.remove('active');
+                    } catch (err) {
+                        alert(err.message);
+                    }
+                });
+            } else {
+                actionDiv.innerHTML = `<button class="btn btn-primary btn-small" id="joinGroupDetailBtn">Join Group</button>`;
+                document.getElementById('joinGroupDetailBtn').addEventListener('click', async () => {
+                    await joinGroup(groupId);
+                    renderGroupsList();
+                    renderSidebarGroups();
+                    showGroupDetail(groupId); // refresh
+                });
+            }
+            // Load group posts
+            const groupPosts = group.posts || [];
+            const postsContainer = document.getElementById('groupPostsContainer');
+            postsContainer.innerHTML = groupPosts.map(post => renderGroupPost(post)).join('');
+            // Members
+            const membersContainer = document.getElementById('groupMembersContainer');
+            membersContainer.innerHTML = group.members.map(memberId => {
+                const member = allUsers.find(u => u.id === memberId);
+                return `<div class="member-item" data-user-id="${memberId}"><div class="group-avatar">${member.profilePicture ? '' : member.displayName.substring(0,2)}</div><span>${escapeHTML(member.displayName)}</span></div>`;
+            }).join('');
+            // Tab switching
+            document.querySelectorAll('[data-group-tab]').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.groupTab;
+                    if (tabName === 'posts') {
+                        postsContainer.style.display = 'block';
+                        membersContainer.style.display = 'none';
+                    } else {
+                        postsContainer.style.display = 'none';
+                        membersContainer.style.display = 'block';
+                    }
+                    document.querySelectorAll('[data-group-tab]').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                });
+            });
+        }
+
+        function renderGroupPost(post) {
+            const author = allUsers.find(u => u.id === post.authorId) || { displayName: 'Unknown', username: 'unknown' };
+            const mediaHtml = post.mediaUrl ? `
+                <div class="post-media">
+                    ${post.contentType === 'video' 
+                        ? `<video controls src="${API_BASE}${post.mediaUrl}"></video>` 
+                        : `<img src="${API_BASE}${post.mediaUrl}" alt="Group post">`}
+                </div>
+            ` : '';
+            return `
+                <div class="post">
+                    <div class="post-header">
+                        <div class="post-author" data-user-id="${post.authorId}">
+                            <div class="post-author-avatar" style="background-image: url(${author.profilePicture ? API_BASE + author.profilePicture : ''}); background-size: cover;">${author.profilePicture ? '' : author.displayName.substring(0,2)}</div>
+                            <div><h4>${escapeHTML(author.displayName)}</h4></div>
+                        </div>
+                    </div>
+                    <div class="post-content">${escapeHTML(post.content)}</div>
+                    ${mediaHtml}
+                </div>
+            `;
+        }
+
+        // ========== FRIENDS ==========
+        function renderFriendRequests() {
+            const container = document.getElementById('friendRequestsContainer');
+            const pending = friendRequests.filter(req => req.status === 'pending' && req.to === currentUser.id);
+            if (pending.length === 0) {
+                container.innerHTML = '<p class="text-secondary">No pending friend requests.</p>';
+                return;
+            }
+            container.innerHTML = pending.map(req => {
+                const fromUser = allUsers.find(u => u.id === req.from);
+                return `
+                    <div class="setting-item">
+                        <div>${escapeHTML(fromUser?.displayName)} (@${escapeHTML(fromUser?.username)})</div>
+                        <div>
+                            <button class="btn btn-small btn-primary accept-friend" data-req-id="${req.id}">Accept</button>
+                            <button class="btn btn-small btn-secondary decline-friend" data-req-id="${req.id}">Decline</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            document.querySelectorAll('.accept-friend').forEach(btn => {
+                btn.addEventListener('click', () => respondFriendRequest(btn.dataset.reqId, 'accept'));
+            });
+            document.querySelectorAll('.decline-friend').forEach(btn => {
+                btn.addEventListener('click', () => respondFriendRequest(btn.dataset.reqId, 'decline'));
+            });
+        }
+
+        async function respondFriendRequest(reqId, action) {
+            try {
+                await apiCall(`/api/friend-requests/${reqId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ action })
+                });
+                await loadAllData();
+                renderFriendRequests();
+                renderFriendsList();
+                updateBadges();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function renderFriendsList() {
+            const container = document.getElementById('friendsListContainer');
+            const friends = allUsers.filter(u => currentUser.friends.includes(u.id));
+            if (friends.length === 0) {
+                container.innerHTML = '<p class="text-secondary">You have no friends yet. Send some requests!</p>';
+                return;
+            }
+            container.innerHTML = friends.map(friend => `
+                <div class="setting-item">
+                    <div>${escapeHTML(friend.displayName)} (@${escapeHTML(friend.username)})</div>
+                    <button class="btn btn-small btn-danger remove-friend" data-user-id="${friend.id}">Remove</button>
+                </div>
+            `).join('');
+            document.querySelectorAll('.remove-friend').forEach(btn => {
+                btn.addEventListener('click', () => removeFriend(btn.dataset.userId));
+            });
+        }
+
+        async function removeFriend(friendId) {
+            try {
+                await apiCall(`/api/friends/${friendId}`, { method: 'DELETE' });
+                await loadAllData();
+                renderFriendsList();
+                updateBadges();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        // ========== NOTIFICATIONS ==========
+        function renderNotifications() {
+            const container = document.getElementById('notificationDropdown');
+            if (!container) return;
+            if (notifications.length === 0) {
+                container.innerHTML = '<div class="notification-item">No notifications</div>';
+                return;
+            }
+            container.innerHTML = notifications.map(notif => `
+                <div class="notification-item ${notif.read ? '' : 'unread'}" data-notif-id="${notif.id}">
+                    <div>${notif.type === 'mention' ? 'Mentioned you in a comment' : 'Replied to your comment'}</div>
+                    <small>${new Date(notif.createdAt).toLocaleString()}</small>
+                </div>
+            `).join('');
+            document.querySelectorAll('.notification-item').forEach(el => {
+                el.addEventListener('click', () => markNotificationRead(el.dataset.notifId));
+            });
+        }
+
+        async function markNotificationRead(notifId) {
+            try {
+                await apiCall(`/api/notifications/${notifId}/read`, { method: 'PUT' });
+                await loadAllData();
+                renderNotifications();
+                updateBadges();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function updateBadges() {
+            const unreadNotifs = notifications.filter(n => !n.read).length;
+            document.getElementById('notificationBadge').textContent = unreadNotifs;
+            document.getElementById('notificationBadge').style.display = unreadNotifs ? 'flex' : 'none';
+            const pendingReqs = friendRequests.filter(r => r.status === 'pending' && r.to === currentUser.id).length;
+            const badge = document.getElementById('friendRequestBadge');
+            if (badge) {
+                badge.textContent = pendingReqs;
+                badge.style.display = pendingReqs ? 'flex' : 'none';
+            }
+        }
+
+        // ========== TIMERS ==========
+        function startTimers() {
+            timerIntervals.forEach(clearInterval);
+            timerIntervals = [];
+            timerIntervals.push(setInterval(() => {
+                renderFeed(); // refresh timers
+            }, 60000));
+        }
+
+        // ========== PROFILE ==========
+        function loadProfile(userId) {
+            currentProfileUserId = userId;
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) return;
+            document.getElementById('profileDisplayName').textContent = user.displayName;
+            document.getElementById('profileUsername').textContent = `@${user.username}`;
+            const avatar = document.getElementById('profileAvatarLarge');
+            if (user.profilePicture) {
+                avatar.style.backgroundImage = `url(${API_BASE}${user.profilePicture})`;
+                avatar.style.backgroundSize = 'cover';
+                avatar.textContent = '';
+            } else {
+                avatar.style.backgroundImage = '';
+                avatar.textContent = user.displayName.substring(0,2);
+            }
+            const userPosts = posts.filter(p => p.authorId === userId);
+            document.getElementById('profilePostCount').textContent = userPosts.length;
+            document.getElementById('profileFriendCount').textContent = user.friends?.length || 0;
+            // Action button
+            const actionDiv = document.getElementById('profileActionButton');
+            if (userId === currentUser.id) {
+                actionDiv.innerHTML = '';
+            } else if (currentUser.friends.includes(userId)) {
+                actionDiv.innerHTML = `<button class="btn btn-danger btn-small" id="removeFriendProfileBtn">Remove Friend</button>`;
+                document.getElementById('removeFriendProfileBtn')?.addEventListener('click', () => removeFriend(userId));
+            } else {
+                const isRequestSent = friendRequests.some(req => req.from === currentUser.id && req.to === userId && req.status === 'pending');
+                if (isRequestSent) {
+                    actionDiv.innerHTML = `<button class="btn btn-secondary btn-small" disabled>Request Sent</button>`;
+                } else {
+                    actionDiv.innerHTML = `<button class="btn btn-primary btn-small" id="sendFriendRequestBtn">Add Friend</button>`;
+                    document.getElementById('sendFriendRequestBtn')?.addEventListener('click', () => sendFriendRequest(userId));
+                }
+            }
+            // Tabs
+            renderProfilePosts(userId);
+        }
+
+        function renderProfilePosts(userId) {
+            const container = document.getElementById('profilePostsContainer');
+            let filtered = posts.filter(p => p.authorId === userId);
+            if (currentProfileTab === 'liked') {
+                filtered = posts.filter(p => p.reactions && Object.values(p.reactions).some(arr => arr.includes(currentUser.id)));
+            }
+            if (filtered.length === 0) {
+                container.innerHTML = '<p class="text-secondary">No posts to show.</p>';
+                return;
+            }
+            container.innerHTML = filtered.map(post => renderPost(post)).join('');
+            // Reattach event handlers
+            document.querySelectorAll('.reaction-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const postId = btn.dataset.postId;
+                    const emoji = btn.dataset.emoji;
+                    reactToPost(postId, emoji);
+                });
+            });
+            document.querySelectorAll('.toggle-comments').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const postId = btn.dataset.postId;
+                    const section = document.getElementById(`comments-${postId}`);
+                    if (section) {
+                        if (section.classList.contains('hidden')) {
+                            section.classList.remove('hidden');
+                            await loadComments(postId);
+                        } else {
+                            section.classList.add('hidden');
+                        }
+                    }
+                });
+            });
+        }
+
+        async function sendFriendRequest(userId) {
+            try {
+                await apiCall('/api/friend-requests', {
+                    method: 'POST',
+                    body: JSON.stringify({ userId })
+                });
+                await loadAllData();
+                loadProfile(userId);
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        // ========== SEARCH ==========
+        async function performSearch(query) {
+            if (!query.trim()) return;
+            try {
+                const results = await apiCall(`/api/search?q=${encodeURIComponent(query)}`);
+                renderSearchResults(results);
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function renderSearchResults(results) {
+            const container = document.getElementById('searchResultsContainer');
+            if (!container) return;
+            let items = [];
+            if (currentSearchType === 'all') {
+                items = [...results.users, ...results.posts, ...results.groups];
+            } else if (currentSearchType === 'users') {
+                items = results.users;
+            } else if (currentSearchType === 'posts') {
+                items = results.posts;
+            } else if (currentSearchType === 'groups') {
+                items = results.groups;
+            }
+            if (items.length === 0) {
+                container.innerHTML = '<p class="text-secondary">No results found.</p>';
+                return;
+            }
+            container.innerHTML = items.map(item => {
+                if (item.username) { // user
+                    return `<div class="search-result-item" data-user-id="${item.id}" style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem; border-bottom:1px solid var(--border-color); cursor:pointer;"><div class="search-result-avatar" style="width:40px; height:40px; border-radius:50%; background:var(--primary-color); background-size:cover; background-image:url(${item.profilePicture ? API_BASE + item.profilePicture : ''});">${item.profilePicture ? '' : item.displayName.substring(0,2)}</div><div><strong>${escapeHTML(item.displayName)}</strong><br><small>@${escapeHTML(item.username)}</small></div></div>`;
+                } else if (item.content) { // post
+                    const author = allUsers.find(u => u.id === item.authorId);
+                    return `<div class="search-result-item" style="padding:0.5rem; border-bottom:1px solid var(--border-color);"><div><strong>Post from ${escapeHTML(author?.displayName)}</strong><br>${escapeHTML(item.content.substring(0,100))}</div></div>`;
+                } else if (item.name) { // group
+                    return `<div class="search-result-item" data-group-id="${item.id}" style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem; border-bottom:1px solid var(--border-color); cursor:pointer;"><div class="search-result-avatar" style="width:40px; height:40px; border-radius:50%; background:var(--warning-color); display:flex; align-items:center; justify-content:center;">${item.avatar}</div><div><strong>${escapeHTML(item.name)}</strong><br><small>${escapeHTML(item.description)}</small></div></div>`;
+                }
+                return '';
+            }).join('');
+            // Attach click handlers
+            document.querySelectorAll('[data-user-id]').forEach(el => {
+                el.addEventListener('click', () => {
+                    const userId = el.dataset.userId;
+                    switchPage('profile');
+                    loadProfile(userId);
+                });
+            });
+            document.querySelectorAll('[data-group-id]').forEach(el => {
+                el.addEventListener('click', () => {
+                    const groupId = el.dataset.groupId;
+                    switchPage('groups');
+                    showGroupDetail(groupId);
+                });
+            });
+        }
+
+        // ========== PAGE SWITCHING ==========
+        function switchPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`${pageId}Page`).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            const navItem = document.querySelector(`.nav-item[data-page="${pageId}"]`);
+            if (navItem) navItem.classList.add('active');
+            if (pageId === 'home') renderFeed();
+            if (pageId === 'groups') {
+                document.getElementById('groupsListView').classList.remove('hidden');
+                document.getElementById('groupDetailView').classList.remove('active');
+                renderGroupsList();
+            }
+            if (pageId === 'profile') loadProfile(currentUser.id);
+            if (pageId === 'friends') {
+                renderFriendRequests();
+                renderFriendsList();
+            }
+            if (pageId === 'discover') renderDiscover();
+            if (pageId === 'settings') {
+                document.getElementById('darkModeToggle').checked = darkMode;
+                document.getElementById('defaultDuration').value = localStorage.getItem('defaultDuration') || '1440';
+                document.getElementById('defaultVisibility').value = localStorage.getItem('defaultVisibility') || 'friends';
+            }
+        }
+
+        // ========== DISCOVER ==========
+        function renderDiscover() {
+            const container = document.getElementById('discoverContainer');
+            let discoverPosts = [...posts];
+            if (currentDiscoverType === 'popular') {
+                discoverPosts.sort((a,b) => (Object.values(b.reactions || {}).flat().length) - (Object.values(a.reactions || {}).flat().length));
+            } else if (currentDiscoverType === 'new') {
+                discoverPosts.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+            } else {
+                // random: shuffle
+                for (let i = discoverPosts.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [discoverPosts[i], discoverPosts[j]] = [discoverPosts[j], discoverPosts[i]];
+                }
+            }
+            container.innerHTML = discoverPosts.slice(0, 20).map(post => renderPost(post)).join('');
+            // Attach reaction handlers
+            document.querySelectorAll('#discoverContainer .reaction-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const postId = btn.dataset.postId;
+                    const emoji = btn.dataset.emoji;
+                    reactToPost(postId, emoji);
+                });
+            });
+            document.querySelectorAll('#discoverContainer .toggle-comments').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const postId = btn.dataset.postId;
+                    const section = document.getElementById(`comments-${postId}`);
+                    if (section) {
+                        if (section.classList.contains('hidden')) {
+                            section.classList.remove('hidden');
+                            await loadComments(postId);
+                        } else {
+                            section.classList.add('hidden');
+                        }
+                    }
+                });
+            });
+        }
+
+        // ========== MODALS ==========
+        function showCreatePostModal() {
+            document.getElementById('createPostModal').classList.add('active');
+            selectedDuration = 1440;
+            selectedVisibility = 'public';
+            postMediaFiles = [];
+            document.getElementById('postContent').value = '';
+            document.getElementById('mediaPreview').innerHTML = '';
+            document.querySelectorAll('.duration-option').forEach(opt => opt.classList.remove('active'));
+            document.querySelector('.duration-option[data-minutes="1440"]').classList.add('active');
+            document.getElementById('visibilityPublic').checked = true;
+        }
+
+        async function publishPost() {
+            const content = document.getElementById('postContent').value.trim();
+            if (!content) {
+                alert('Please enter some content.');
+                return;
+            }
+            // For simplicity, we are not uploading media in this version (backend not fully implemented for media upload)
+            // You can extend later.
+            try {
+                await apiCall('/api/posts', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        content,
+                        visibility: selectedVisibility,
+                        duration: selectedDuration,
+                        contentType: 'text',
+                        mediaUrl: null
+                    })
+                });
+                await loadAllData();
+                renderFeed();
+                closeModal('createPostModal');
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function showCreateGroupModal() {
+            document.getElementById('createGroupModal').classList.add('active');
+        }
+
+        async function createGroup() {
+            const name = document.getElementById('groupName').value.trim();
+            const description = document.getElementById('groupDescription').value.trim();
+            const avatar = document.getElementById('selectedGroupEmoji').value;
+            if (!name) {
+                alert('Group name required.');
+                return;
+            }
+            try {
+                await apiCall('/api/groups', {
+                    method: 'POST',
+                    body: JSON.stringify({ name, description, avatar })
+                });
+                await loadAllData();
+                renderGroupsList();
+                renderSidebarGroups();
+                closeModal('createGroupModal');
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // ========== SETTINGS ==========
+        async function deleteAllContent() {
+            if (confirm('Are you sure you want to delete all your content? This cannot be undone.')) {
+                try {
+                    await apiCall('/api/user/delete-content', { method: 'DELETE' });
+                    await loadAllData();
+                    renderFeed();
+                    alert('All content deleted.');
+                } catch (err) {
+                    alert(err.message);
+                }
+            }
+        }
+
+        async function deleteAccount() {
+            if (confirm('Are you sure you want to permanently delete your account? This cannot be undone.')) {
+                try {
+                    await apiCall('/api/user/delete-account', { method: 'DELETE' });
+                    logout();
+                } catch (err) {
+                    alert(err.message);
+                }
+            }
+        }
+
+        async function uploadAvatar(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const response = await fetch(`${API_BASE}/api/user/profile-picture`, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'   // important for auth
+                });
+                const data = await response.json();
+                if (data.url) {
+                    currentUser.profilePicture = data.url;
+                    // Update UI
+                    const avatarDiv = document.getElementById('userAvatar');
+                    if (currentUser.profilePicture) {
+                        avatarDiv.style.backgroundImage = `url(${API_BASE}${currentUser.profilePicture})`;
+                        avatarDiv.style.backgroundSize = 'cover';
+                        avatarDiv.textContent = '';
+                    } else {
+                        avatarDiv.style.backgroundImage = '';
+                        avatarDiv.textContent = currentUser.displayName.substring(0,2).toUpperCase();
+                    }
+                    document.getElementById('avatarPreview').style.backgroundImage = `url(${API_BASE}${data.url})`;
+                } else {
+                    alert('Upload failed');
+                }
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function updateSettings() {
+            const defaultDuration = parseInt(document.getElementById('defaultDuration').value);
+            const defaultVisibility = document.getElementById('defaultVisibility').value;
+            try {
+                await apiCall('/api/user/settings', {
+                    method: 'PUT',
+                    body: JSON.stringify({ defaultDuration, defaultVisibility })
+                });
+                localStorage.setItem('defaultDuration', defaultDuration);
+                localStorage.setItem('defaultVisibility', defaultVisibility);
+                alert('Settings saved');
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        // ========== DARK MODE ==========
+        function applyDarkMode() {
+            if (darkMode) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+            localStorage.setItem('darkMode', darkMode);
+        }
+
+        // ========== INIT ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            applyDarkMode();
+
+            // Login
+            document.getElementById('loginBtn').addEventListener('click', () => {
+                const username = document.getElementById('loginUsername').value;
+                const password = document.getElementById('loginPassword').value;
+                login(username, password);
+            });
+
+            // Register modal
+            document.getElementById('showRegisterBtn').addEventListener('click', () => {
+                document.getElementById('registerModal').classList.add('active');
+            });
+            document.querySelectorAll('.close-register-modal').forEach(btn => btn.addEventListener('click', () => closeModal('registerModal')));
+
+            // Register button
+            document.getElementById('registerBtn').addEventListener('click', () => {
+                const username = document.getElementById('registerUsername').value;
+                const displayName = document.getElementById('registerDisplayName').value;
+                const password = document.getElementById('registerPassword').value;
+                const secret1 = document.getElementById('recoverySecret1').value;
+                const secret2 = document.getElementById('recoverySecret2').value;
+                const secret3 = document.getElementById('recoverySecret3').value;
+                const recoveryEmail = document.getElementById('recoveryEmail').value;
+                if (!username || !displayName || !password || !secret1 || !secret2 || !secret3) {
+                    alert('Please fill all required fields.');
+                    return;
+                }
+                register(username, displayName, password, [secret1, secret2, secret3], recoveryEmail);
+                closeModal('registerModal');
+            });
+
+            // Logout
+            document.getElementById('logoutBtn').addEventListener('click', logout);
+
+            // New post
+            document.getElementById('newPostBtn').addEventListener('click', showCreatePostModal);
+            document.querySelectorAll('.close-post-modal').forEach(btn => btn.addEventListener('click', () => closeModal('createPostModal')));
+            document.getElementById('publishPostBtn').addEventListener('click', publishPost);
+
+            // Create group
+            document.getElementById('createGroupBtn').addEventListener('click', showCreateGroupModal);
+            document.querySelectorAll('.close-group-modal').forEach(btn => btn.addEventListener('click', () => closeModal('createGroupModal')));
+            document.getElementById('createGroupConfirmBtn').addEventListener('click', createGroup);
+
+            // Back to groups
+            document.getElementById('backToGroupsBtn').addEventListener('click', () => {
+                document.getElementById('groupsListView').classList.remove('hidden');
+                document.getElementById('groupDetailView').classList.remove('active');
+                renderGroupsList();
+            });
+
+            // Create group post
+            document.getElementById('createGroupPostBtn').addEventListener('click', async () => {
+                const content = prompt('What would you like to post in this group?');
+                if (content) {
+                    try {
+                        await apiCall(`/api/groups/${currentGroupId}/posts`, {
+                            method: 'POST',
+                            body: JSON.stringify({ content, contentType: 'text', duration: 1440 })
+                        });
+                        await loadAllData();
+                        showGroupDetail(currentGroupId);
+                    } catch (err) {
+                        alert(err.message);
+                    }
+                }
+            });
+
+            // Dark mode toggle
+            document.getElementById('themeToggle').addEventListener('click', () => {
+                darkMode = !darkMode;
+                applyDarkMode();
+                document.getElementById('darkModeToggle').checked = darkMode;
+            });
+            document.getElementById('darkModeToggle').addEventListener('change', (e) => {
+                darkMode = e.target.checked;
+                applyDarkMode();
+            });
+
+            // Avatar upload
+            document.getElementById('uploadAvatarBtn').addEventListener('click', () => {
+                document.getElementById('avatarUpload').click();
+            });
+            document.getElementById('avatarUpload').addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    uploadAvatar(e.target.files[0]);
+                }
+            });
+
+            // Delete actions
+            document.getElementById('deleteContentBtn').addEventListener('click', deleteAllContent);
+            document.getElementById('deleteAccountBtn').addEventListener('click', deleteAccount);
+
+            // Save settings on change
+            document.getElementById('defaultDuration').addEventListener('change', updateSettings);
+            document.getElementById('defaultVisibility').addEventListener('change', updateSettings);
+
+            // Mobile menu
+            document.getElementById('mobileMenuToggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('active');
+            });
+
+            // Feed tabs
+            document.querySelectorAll('[data-feed]').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    currentFeedFilter = tab.dataset.feed;
+                    document.querySelectorAll('[data-feed]').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    renderFeed();
+                });
+            });
+
+            // Discover tabs
+            document.querySelectorAll('[data-discover]').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    currentDiscoverType = tab.dataset.discover;
+                    document.querySelectorAll('[data-discover]').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    renderDiscover();
+                });
+            });
+
+            // Search
+            let searchTimeout;
+            document.getElementById('globalSearch').addEventListener('input', (e) => {
+                const query = e.target.value;
+                clearTimeout(searchTimeout);
+                if (query.length > 2) {
+                    searchTimeout = setTimeout(() => {
+                        performSearch(query);
+                        switchPage('search');
+                    }, 300);
+                }
+            });
+            document.querySelectorAll('[data-search]').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    currentSearchType = tab.dataset.search;
+                    document.querySelectorAll('[data-search]').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    performSearch(document.getElementById('globalSearch').value);
+                });
+            });
+
+            // Profile tabs
+            document.querySelectorAll('[data-profile]').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    currentProfileTab = tab.dataset.profile;
+                    document.querySelectorAll('[data-profile]').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    renderProfilePosts(currentProfileUserId);
+                });
+            });
+
+            // Duration options in post modal
+            document.querySelectorAll('.duration-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    document.querySelectorAll('.duration-option').forEach(o => o.classList.remove('active'));
+                    opt.classList.add('active');
+                    selectedDuration = parseInt(opt.dataset.minutes);
+                });
+            });
+            document.querySelectorAll('input[name="visibility"]').forEach(radio => {
+                radio.addEventListener('change', () => {
+                    if (radio.checked) selectedVisibility = radio.value;
+                });
+            });
+
+            // Emoji options in group modal
+            document.querySelectorAll('.emoji-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    document.querySelectorAll('.emoji-option').forEach(o => o.classList.remove('active'));
+                    opt.classList.add('active');
+                    document.getElementById('selectedGroupEmoji').value = opt.dataset.emoji;
+                });
+            });
+
+            // Notification bell
+            document.getElementById('notificationBell').addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.getElementById('notificationDropdown').classList.toggle('show');
+            });
+            document.addEventListener('click', () => {
+                document.getElementById('notificationDropdown').classList.remove('show');
+            });
+
+            // Navigation
+            document.querySelectorAll('.nav-item[data-page]').forEach(nav => {
+                nav.addEventListener('click', () => {
+                    const page = nav.dataset.page;
+                    switchPage(page);
+                    if (window.innerWidth <= 768) {
+                        document.getElementById('sidebar').classList.remove('active');
+                    }
+                });
+            });
+
+            // Initial load
+            renderLogin();
+        });
+    </script>
+</body>
+</html>
