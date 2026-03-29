@@ -39,7 +39,10 @@ CORS(app,
      supports_credentials=True)               # Required to send cookies
 
 Talisman(app, content_security_policy=None)  # optional, adjust as needed
-limiter = Limiter(app, key_func=get_remote_address, default_limits=["200 per day", "50 per hour"])
+
+limiter = Limiter(key_func=get_remote_address, default_limits=["200 per day", "50 per hour"])
+limiter.init_app(app)
+
 db = SQLAlchemy(app)
 
 # Ensure upload folder exists
