@@ -32,9 +32,9 @@ app.config.from_object(Config)
 # ⚠️ CHANGE: Replace 'https://faraxx.netlify.app/' with your actual Netlify domain
 CORS(app,
      origins=[
-         'https://faraxx.netlify.app/',      # 👈 YOUR NETLIFY DOMAIN
-         'http://localhost:5000',
-         'http://127.0.0.1:5000'
+         'faraxx.netlify.app',      # 👈 YOUR NETLIFY DOMAIN
+         'faraxx.netlify.app',
+         'faraxx.netlify.app'
      ],
      supports_credentials=True)               # Required to send cookies
 
